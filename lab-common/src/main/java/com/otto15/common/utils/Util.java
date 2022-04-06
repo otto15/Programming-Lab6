@@ -1,4 +1,4 @@
-package com.otto15.common.util;
+package com.otto15.common.utils;
 
 public final class Util {
     private Util() {
