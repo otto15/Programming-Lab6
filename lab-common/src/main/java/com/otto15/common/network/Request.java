@@ -33,9 +33,9 @@ public class Request implements Serializable {
 
     @Override
     public String toString() {
-        return "Request{" +
-                "command=" + command +
-                ", args=" + Arrays.toString(args) +
-                '}';
+        return "Request{"
+                + "command=" + command
+                + ", args=" + Arrays.toString(args)
+                + '}';
     }
 }

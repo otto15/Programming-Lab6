@@ -1,23 +1,28 @@
-//package com.otto15.common.commands;
-//
-//import com.otto15.common.controllers.CommandManager;
-//
-//import java.util.Map;
-//
-///**
-// * Command for showing the commands info
-// */
-//public class HelpCommand extends AbstractCommand {
-//
-//    public HelpCommand() {
-//        super("help", "shows the list of commands", 0);
-//    }
-//
-//    @Override
-//    public boolean execute(Object[] args) {
-//        for (Map.Entry<String, AbstractCommand> command : CommandManager.getCommands().entrySet()) {
-//            System.out.println(command.getValue().getName() + " - " + command.getValue().getDescription() + ", implies " + command.getValue().getInlineArgsCount() + " argument(s)");
-//        }
-//        return true;
-//    }
-//}
+package com.otto15.common.commands;
+
+import com.otto15.common.controllers.CommandManager;
+import java.util.stream.Collectors;
+
+/**
+ * Command for showing the commands info
+ */
+public class HelpCommand extends AbstractCommand {
+
+    public HelpCommand() {
+        super("help", "shows the list of commands", 0);
+    }
+
+    @Override
+    public Object[] readArgs(Object[] args) {
+        return new Object[0];
+    }
+
+    @Override
+    public String execute(Object[] args) {
+        return CommandManager.getCommands()
+                .values()
+                .stream()
+                .map(value -> value.getName() + " - " + value.getDescription() + ", implies " + value.getInlineArgsCount() + " argument(s)")
+                .collect(Collectors.joining("\n"));
+    }
+}

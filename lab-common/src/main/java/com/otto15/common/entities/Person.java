@@ -2,7 +2,6 @@ package com.otto15.common.entities;
 
 import com.otto15.common.entities.enums.Color;
 import com.otto15.common.entities.enums.Country;
-import com.otto15.common.network.Serializer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,8 +16,8 @@ import java.util.Comparator;
  * Represent person with its properties.
  */
 public class Person implements Comparable<Person>, Serializable {
-    private static Long previousId = 0L;
-    private Long id = previousId++ + 1; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
+
+    private Long id; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
     private final ZonedDateTime creationDate = ZonedDateTime.now(); //Поле не может быть null, Значение этого поля должно генерироваться автоматически
 
     @NotBlank
@@ -58,8 +57,8 @@ public class Person implements Comparable<Person>, Serializable {
         this.location = location;
     }
 
-    public  void setId() {
-        id = previousId++ + 1;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public Long getId() {
@@ -142,5 +141,9 @@ public class Person implements Comparable<Person>, Serializable {
     @Override
     public String toString() {
         return "id: " + id + ", name: " + name + ", coordinates: " + coordinates + ", height: " + height + ", creationDate: " + creationDate.format(DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm")) + ", eyeColor: " + eyeColor + ", hairColor: " + hairColor + ", nationality: " + nationality + ", location: " + location;
+    }
+
+    public String currentValues() {
+        return name + " \"" + coordinates + "\" " + height + " " + eyeColor + " " + hairColor + " " + nationality + " \"" + location + "\"";
     }
 }

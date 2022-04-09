@@ -17,7 +17,24 @@ import com.otto15.common.commands.AddCommand;
 //import com.otto15.common.commands.ShowCommand;
 //import com.otto15.common.commands.SumOfHeightCommand;
 //import com.otto15.common.commands.UpdateCommand;
+import com.otto15.common.commands.AddIfMinCommand;
+import com.otto15.common.commands.ClearCommand;
+import com.otto15.common.commands.ExecuteScriptCommand;
+import com.otto15.common.commands.ExitCommand;
+import com.otto15.common.commands.GroupCountingByHeightCommand;
+import com.otto15.common.commands.HelpCommand;
+import com.otto15.common.commands.HistoryCommand;
+import com.otto15.common.commands.InfoCommand;
+import com.otto15.common.commands.RemoveAnyByHeightCommand;
+import com.otto15.common.commands.RemoveByIdCommand;
+import com.otto15.common.commands.RemoveGreaterCommand;
+import com.otto15.common.commands.SaveCommand;
+import com.otto15.common.commands.ShowCommand;
+import com.otto15.common.commands.SumOfHeightCommand;
+import com.otto15.common.commands.UpdateCommand;
+import com.otto15.common.network.NetworkListener;
 import com.otto15.common.network.Request;
+import com.otto15.common.network.Response;
 import com.otto15.common.utils.DataNormalizer;
 
 import java.util.Arrays;
@@ -34,7 +51,10 @@ public final class CommandManager {
 
     private static final int HISTORY_LENGTH = 10;
     private static final Queue<String> COMMAND_HISTORY = new LinkedList<>();
-    private static final Map<String, AbstractCommand> COMMANDS = new HashMap<>();
+    private static final Map<String, AbstractCommand> CLIENT_COMMANDS = new HashMap<>();
+    private static final Map<String, AbstractCommand> SERVER_COMMANDS = new HashMap<>();
+    private static final Map<String, AbstractCommand> COMMANDS_EXECUTING_WITHOUT_SENDING = new HashMap<>();
+    private static NetworkListener networkListener;
     private static CollectionManager collectionManager;
 
     private CommandManager() {
@@ -42,22 +62,27 @@ public final class CommandManager {
     }
 
     static {
-        COMMANDS.put("add", new AddCommand());
-//        COMMANDS.put("add_if_min", new AddIfMinCommand());
-//        COMMANDS.put("clear", new ClearCommand());
-//        COMMANDS.put("exit", new ExitCommand());
-//        COMMANDS.put("history", new HistoryCommand());
-//        COMMANDS.put("info", new InfoCommand());
-//        COMMANDS.put("remove_any_by_height", new RemoveAnyByHeightCommand());
-//        COMMANDS.put("remove_by_id", new RemoveByIdCommand());
-//        COMMANDS.put("remove_greater", new RemoveGreaterCommand());
-//        COMMANDS.put("save", new SaveCommand());
-//        COMMANDS.put("sum_of_height", new SumOfHeightCommand());
-//        COMMANDS.put("update", new UpdateCommand());
-//        COMMANDS.put("group_counting_by_height", new GroupCountingByHeightCommand());
-//        COMMANDS.put("execute_script", new ExecuteScriptCommand());
-//        COMMANDS.put("help", new HelpCommand());
-//        COMMANDS.put("show", new ShowCommand());
+        CLIENT_COMMANDS.put("add", new AddCommand());
+        CLIENT_COMMANDS.put("add_if_min", new AddIfMinCommand());
+        CLIENT_COMMANDS.put("clear", new ClearCommand());
+        CLIENT_COMMANDS.put("exit", new ExitCommand());
+        CLIENT_COMMANDS.put("history", new HistoryCommand());
+        CLIENT_COMMANDS.put("info", new InfoCommand());
+        CLIENT_COMMANDS.put("remove_any_by_height", new RemoveAnyByHeightCommand());
+        CLIENT_COMMANDS.put("remove_by_id", new RemoveByIdCommand());
+        CLIENT_COMMANDS.put("remove_greater", new RemoveGreaterCommand());
+        CLIENT_COMMANDS.put("sum_of_height", new SumOfHeightCommand());
+        CLIENT_COMMANDS.put("update", new UpdateCommand());
+        CLIENT_COMMANDS.put("group_counting_by_height", new GroupCountingByHeightCommand());
+        CLIENT_COMMANDS.put("execute_script", new ExecuteScriptCommand());
+        CLIENT_COMMANDS.put("help", new HelpCommand());
+        CLIENT_COMMANDS.put("show", new ShowCommand());
+
+        SERVER_COMMANDS.put("save", new SaveCommand());
+        SERVER_COMMANDS.put("exit", new ExitCommand());
+
+        COMMANDS_EXECUTING_WITHOUT_SENDING.putAll(SERVER_COMMANDS);
+        COMMANDS_EXECUTING_WITHOUT_SENDING.put("execute_script", new ExecuteScriptCommand());
     }
 
     public static void setCollectionManager(CollectionManager collectionManager) {
@@ -68,8 +93,16 @@ public final class CommandManager {
         return collectionManager;
     }
 
+    public static void setNetworkListener(NetworkListener networkListener) {
+        CommandManager.networkListener = networkListener;
+    }
+
+    public static NetworkListener getNetworkListener() {
+        return networkListener;
+    }
+
     public static Map<String, AbstractCommand> getCommands() {
-        return COMMANDS;
+        return CLIENT_COMMANDS;
     }
 
     public static Queue<String> getCommandHistory() {
@@ -88,20 +121,38 @@ public final class CommandManager {
      *
      * @param inputData data from listener
      */
-    public static Request onCommandReceived(String inputData) {
+    public static String onCommandReceived(String inputData) {
+        boolean fromClient = CommandListener.isOnClient();
+        Map<String, AbstractCommand> commands = SERVER_COMMANDS;
+        if (fromClient) {
+            commands = CLIENT_COMMANDS;
+        }
         String[] commandWithRawArgs = DataNormalizer.normalize(inputData);
         String commandName = commandWithRawArgs[0].toLowerCase(Locale.ROOT);
         String[] rawArgs = Arrays.copyOfRange(commandWithRawArgs, 1, commandWithRawArgs.length);
-        if (COMMANDS.containsKey(commandName)) {
-            AbstractCommand command = COMMANDS.get(commandName);
-            if (rawArgs.length == command.getInlineArgsCount()) {
-                Object[] commandArgs = command.readArgs(rawArgs);
-                return new Request(command, commandArgs);
+        if (commands.containsKey(commandName)) {
+            AbstractCommand command = commands.get(commandName);
+            return processCommand(command, rawArgs);
+        }
+        return "No such command, call \"help\" to see the list of commands.";
+    }
+
+    public static String processCommand(AbstractCommand command, String[] rawArgs) {
+        if (rawArgs.length == command.getInlineArgsCount()) {
+            Object[] commandArgs = command.readArgs(rawArgs);
+            if (commandArgs == null) {
+                return null;
+            }
+            if (COMMANDS_EXECUTING_WITHOUT_SENDING.containsKey(command.getName())) {
+                return executeCommand(command, commandArgs);
             } else {
-                System.out.println("Wrong number of arguments.");
+                Response response = networkListener.listen(new Request(command, commandArgs));
+                if (response != null) {
+                    return response.getMessage();
+                }
             }
         } else {
-            System.out.println("No such command, call \"help\" to see the list of commands.");
+            return "Wrong number of arguments.";
         }
         return null;
     }

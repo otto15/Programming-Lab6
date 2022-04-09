@@ -1,6 +1,5 @@
 package com.otto15.client;
 
-import com.otto15.client.exceptions.LostConnectionException;
 import com.otto15.common.network.Request;
 import com.otto15.common.network.Response;
 import com.otto15.common.network.Serializer;

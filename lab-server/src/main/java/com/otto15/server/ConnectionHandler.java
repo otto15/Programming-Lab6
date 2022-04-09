@@ -1,9 +1,11 @@
 package com.otto15.server;
 
 
+import com.otto15.common.controllers.CommandManager;
 import com.otto15.common.network.Request;
 import com.otto15.common.network.Response;
 import com.otto15.common.network.Serializer;
+import com.otto15.common.state.State;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -13,13 +15,12 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 
-public final class ConnectionHandler {
+public final class ConnectionHandler implements Runnable {
 
     private static final int PORT = 2645;
     private static final int BUFFER_SIZE = 4096;
@@ -37,22 +38,33 @@ public final class ConnectionHandler {
         System.out.println("Server launched!");
     }
 
-    public void run() throws IOException {
-        while (true) {
+    public void run() {
+        try {
+            listen();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+
+    }
+
+    public void listen() throws IOException {
+        while (State.getPerformanceStatus()) {
             SelectionKey key = null;
             try {
-                selector.select();
-                Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
-                while (keys.hasNext()) {
-                    key = keys.next();
-                    keys.remove();
-                    if (key.isValid()) {
-                        if (key.isAcceptable()) {
-                            accept(key);
-                        } else if (key.isReadable()) {
-                            read(key);
-                        } else if (key.isWritable()) {
-                            write(key);
+                int numberOfKeys = selector.selectNow();
+                if (numberOfKeys != 0) {
+                    Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
+                    while (keys.hasNext()) {
+                        key = keys.next();
+                        keys.remove();
+                        if (key.isValid()) {
+                            if (key.isAcceptable()) {
+                                accept(key);
+                            } else if (key.isReadable()) {
+                                read(key);
+                            } else if (key.isWritable()) {
+                                write(key);
+                            }
                         }
                     }
                 }
@@ -61,7 +73,6 @@ public final class ConnectionHandler {
                 kill((SocketChannel) key.channel());
             }
         }
-
     }
 
     private void accept(SelectionKey key) throws IOException {
@@ -86,7 +97,9 @@ public final class ConnectionHandler {
         System.out.println("got: " + request);
         buffer.clear();
         assert request != null;
-        buffer.put(ByteBuffer.wrap(request.toString().getBytes(StandardCharsets.UTF_8)));
+        buffer.put(ByteBuffer.wrap(
+                CommandManager.executeCommand(request.getCommand(), request.getArgs()).getBytes(StandardCharsets.UTF_8)
+        ));
         buffer.flip();
 
         channel.register(selector, SelectionKey.OP_WRITE);
@@ -95,7 +108,6 @@ public final class ConnectionHandler {
     private void write(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
         ByteBuffer buffer = channels.get(channel);
-        System.out.println("write");
         String clientMessage = new String(buffer.array(), buffer.position(), buffer.limit());
         Response response = new Response(clientMessage);
 

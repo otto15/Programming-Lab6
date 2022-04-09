@@ -1,13 +1,10 @@
 package com.otto15.client;
 
-import com.otto15.common.network.Request;
-import com.otto15.common.network.Response;
-import com.otto15.common.network.Serializer;
-
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
-import java.util.Scanner;
 
 public final class ConnectionHandler {
 
@@ -15,6 +12,9 @@ public final class ConnectionHandler {
     public static final int BUFFER_SIZE = 4096;
     private Socket socket;
     private boolean isOpen = false;
+    private InputStream inputStream;
+    private OutputStream outputStream;
+
 
     public ConnectionHandler() {
     }
@@ -23,9 +23,19 @@ public final class ConnectionHandler {
         return socket;
     }
 
+    public InputStream getInputStream() {
+        return inputStream;
+    }
+
+    public OutputStream getOutputStream() {
+        return outputStream;
+    }
+
     public void openConnection() throws IOException {
         try {
             socket = new Socket("localhost", PORT);
+            inputStream = socket.getInputStream();
+            outputStream = socket.getOutputStream();
             isOpen = !isOpen;
         } catch (ConnectException e) {
             System.out.println("Server is not available.");
@@ -36,8 +46,12 @@ public final class ConnectionHandler {
         return isOpen;
     }
 
-    public void close() throws IOException {
-        socket.close();
+    public void close() {
+        try {
+            socket.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 

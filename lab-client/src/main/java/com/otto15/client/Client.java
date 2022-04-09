@@ -1,5 +1,7 @@
 package com.otto15.client;
 
+import com.otto15.common.controllers.CommandListener;
+import com.otto15.common.controllers.CommandManager;
 
 import java.io.IOException;
 
@@ -13,10 +15,12 @@ public final class Client {
         ConnectionHandler connectionHandler = new ConnectionHandler();
         connectionHandler.openConnection();
         if (connectionHandler.isOpen()) {
+            ClientNetworkListener clientListener = new ClientNetworkListener(connectionHandler);
+            CommandManager.setNetworkListener(clientListener);
             CommandListener commandListener = new CommandListener();
-            ClientListener clientListener = new ClientListener(connectionHandler, commandListener);
+            CommandListener.setOnClient();
             System.out.println("Salamaleikum!");
-            clientListener.listen();
+            commandListener.run();
         }
     }
 

@@ -1,4 +1,4 @@
-package com.otto15.server.io;
+package com.otto15.common.io;
 
 
 import java.io.File;

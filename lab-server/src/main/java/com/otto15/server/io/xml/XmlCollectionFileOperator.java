@@ -1,14 +1,13 @@
 package com.otto15.server.io.xml;
 
 import com.otto15.server.collection.CollectionManagerImpl;
-import com.otto15.server.io.CollectionFileReader;
-import com.otto15.server.io.CollectionFileWriter;
+import com.otto15.common.io.CollectionFileReader;
+import com.otto15.common.io.CollectionFileWriter;
 import com.otto15.common.utils.FileStreamToStringConverter;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.converters.ConversionException;
 import com.thoughtworks.xstream.security.AnyTypePermission;
 import com.otto15.common.entities.Person;
-import com.otto15.server.collection.CollectionManagerImpl;
 
 import java.io.File;
 import java.io.IOException;

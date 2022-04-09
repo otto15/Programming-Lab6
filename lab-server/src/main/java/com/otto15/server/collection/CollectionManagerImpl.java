@@ -1,10 +1,13 @@
 package com.otto15.server.collection;
 
 import com.otto15.common.controllers.CollectionManager;
+import com.otto15.common.entities.Coordinates;
 import com.otto15.common.entities.Person;
 import com.otto15.common.entities.validators.EntityValidator;
-import com.otto15.server.io.CollectionFileReader;
+import com.otto15.common.io.CollectionFileReader;
+import com.otto15.server.config.IOConfig;
 import com.thoughtworks.xstream.converters.ConversionException;
+
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -15,6 +18,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Wrapper for HashSet to store the additional info.
@@ -22,6 +27,7 @@ import java.util.Map;
  * @author Rakhmatullin R.
  */
 public class CollectionManagerImpl implements CollectionManager {
+    private Long currentID = 1L; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
     private HashSet<Person> persons;
     private ZonedDateTime creationDate = ZonedDateTime.now();
     private Map<Long, List<Person>> groupsByHeight;
@@ -44,6 +50,7 @@ public class CollectionManagerImpl implements CollectionManager {
 
     /**
      * Collection manager initialization from file
+     *
      * @param collectionFileReader
      * @param file
      * @return
@@ -52,6 +59,7 @@ public class CollectionManagerImpl implements CollectionManager {
     public static CollectionManagerImpl initFromFile(CollectionFileReader<CollectionManagerImpl> collectionFileReader, File file) throws IOException {
         try {
             CollectionManagerImpl collectionManager = collectionFileReader.read(file);
+            collectionManager.currentID = 1L;
             collectionManager.setCreationDate();
             if (collectionManager.getPersons() == null) {
                 collectionManager.persons = new HashSet<>();
@@ -67,6 +75,7 @@ public class CollectionManagerImpl implements CollectionManager {
 
     @Override
     public void add(Person newPerson) {
+        newPerson.setId(currentID++);
         persons.add(newPerson);
     }
 
@@ -76,24 +85,33 @@ public class CollectionManagerImpl implements CollectionManager {
     }
 
     @Override
-    public void show() {
+    public String show() {
         if (!persons.isEmpty()) {
-            for (Person person : persons) {
-                System.out.println(person);
-            }
+            return persons.stream()
+                    .sorted((person1, person2) -> person1.getName().compareToIgnoreCase(person2.getName()))
+                    .map(Person::toString)
+                    .collect(Collectors.joining("\n"));
         } else {
-            System.out.println("Collection is empty.");
+            return "Collection is empty.";
         }
     }
 
     @Override
     public Person findById(Long id) {
-        for (Person person : persons) {
-            if (person.getId().equals(id)) {
-                return person;
-            }
+        Person foundPerson = persons.stream().filter(person -> Objects.equals(person.getId(), id)).findFirst().orElse(new Person("", null, 100, null, null, null, null));
+        if (foundPerson.getId() == null) {
+            foundPerson.setId(-1L);
         }
-        throw new IllegalArgumentException("No person with such id.");
+        return foundPerson;
+    }
+
+    @Override
+    public Person findAnyByHeight(long height) {
+        Person foundPerson = persons.stream().filter(person -> Objects.equals(person.getHeight(), height)).findFirst().orElse(new Person("", null, 100, null, null, null, null));
+        if (foundPerson.getId() == null) {
+            foundPerson.setId(-1L);
+        }
+        return foundPerson;
     }
 
     @Override
@@ -116,15 +134,11 @@ public class CollectionManagerImpl implements CollectionManager {
 
     @Override
     public Person removeAnyByHeight(long height) {
-        Person deletedPerson = null;
-        for (Person singlePerson : persons) {
-            if (singlePerson.getHeight() == height) {
-                deletedPerson = singlePerson;
-                persons.remove(singlePerson);
-                break;
-            }
+        Person personToDelete = findAnyByHeight(height);
+        if (personToDelete.getId() != -1) {
+            persons.remove(personToDelete);
         }
-        return deletedPerson;
+        return personToDelete;
     }
 
     @Override
@@ -140,14 +154,37 @@ public class CollectionManagerImpl implements CollectionManager {
     }
 
     @Override
-    public void outputGroupsByHeight() {
+    public String outputGroupsByHeight() {
         if (groupsByHeight.isEmpty()) {
-            System.out.println("Collection is empty");
-        } else {
-            for (Map.Entry<Long, List<Person>> group : groupsByHeight.entrySet()) {
-                System.out.println("Height - " + group.getKey() + ": " + group.getValue().size() + " members.");
-            }
+            return "Collection is empty";
         }
+
+        return groupsByHeight.keySet()
+                .stream()
+                .map((key) -> "Height - " + key + ": " + groupsByHeight.get(key).size() + " member(s).")
+                .collect(Collectors.joining("\n"));
+
+    }
+
+    @Override
+    public void update(Person updatedPerson) {
+        removeById(updatedPerson.getId());
+        persons.add(updatedPerson);
+    }
+
+    @Override
+    public boolean removeById(Long id) {
+        Person personToRemove = findById(id);
+        if (personToRemove.getId() == -1) {
+            return false;
+        }
+        persons.remove(personToRemove);
+        return true;
+    }
+
+    @Override
+    public void write() throws IOException {
+        IOConfig.COLLECTION_FILE_WRITER.write(IOConfig.getOutputFile(), this);
     }
 
     /**
@@ -156,7 +193,7 @@ public class CollectionManagerImpl implements CollectionManager {
     private void setup() {
         for (Person personInQuestion : persons) {
             if (EntityValidator.isEntityValid(personInQuestion)) {
-                personInQuestion.setId();
+                personInQuestion.setId(currentID++);
             } else {
                 throw new IllegalArgumentException("Person' field value is invalid.");
             }
