@@ -1,7 +1,6 @@
 package com.otto15.client;
 
 
-import com.otto15.common.state.State;
 import com.otto15.common.network.NetworkListener;
 import com.otto15.common.network.Request;
 import com.otto15.common.network.Response;
@@ -23,15 +22,19 @@ public final class ClientNetworkListener implements NetworkListener {
     @Override
     public Response listen(Request request) {
         Response response = null;
-        try {
-            ClientDispatcher.send(request, connectionHandler.getOutputStream());
-            connectionHandler.getSocket().setSoTimeout(TIMEOUT);
-            response = ClientDispatcher.receive(connectionHandler.getInputStream());
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            connectionHandler.close();
-            System.out.println();
-            State.switchPerformanceStatus();
+        if (!connectionHandler.isOpen()) {
+            connectionHandler.openConnection();
+        }
+        if (connectionHandler.isOpen()) {
+            try {
+                ClientDispatcher.send(request, connectionHandler.getOutputStream());
+                connectionHandler.getSocket().setSoTimeout(TIMEOUT);
+                response = ClientDispatcher.receive(connectionHandler.getInputStream(), connectionHandler.getSocket().getReceiveBufferSize());
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+                connectionHandler.close();
+                connectionHandler.openConnection();
+            }
         }
         return response;
     }

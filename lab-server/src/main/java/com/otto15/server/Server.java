@@ -16,10 +16,10 @@ public final class Server {
 
     public static void main(String[] args) {
         if (IOConfig.configure()) {
+            CollectionManager collectionManager = CollectionManagerImpl.initFromFile(IOConfig.COLLECTION_FILE_READER,
+                    IOConfig.getInputFile());
+            CommandManager.setCollectionManager(collectionManager);
             try {
-                CollectionManager collectionManager = CollectionManagerImpl.initFromFile(IOConfig.COLLECTION_FILE_READER,
-                        IOConfig.getInputFile());
-                CommandManager.setCollectionManager(collectionManager);
                 ConnectionHandler connectionHandler = new ConnectionHandler();
                 Thread connectionHandlerThread = new Thread(connectionHandler);
                 connectionHandlerThread.start();

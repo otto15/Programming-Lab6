@@ -9,7 +9,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.List;
 
 /**
  * Loader for Person class
@@ -196,14 +195,15 @@ public final class PersonLoader {
     }
 
     public static Person loadPersonWithCurrentValues(String[] values) throws IOException {
+        int i = 0;
         return new Person(
-                loadName(STREAM_READER, values[0]),
-                loadCoordinates(STREAM_READER, values[1]),
-                loadHeight(STREAM_READER, values[2]),
-                loadEyeColor(STREAM_READER, values[3]),
-                loadHairColor(STREAM_READER, values[4]),
-                loadNationality(STREAM_READER, values[5]),
-                loadLocation(STREAM_READER, values[6])
+                loadName(STREAM_READER, values[i++]),
+                loadCoordinates(STREAM_READER, values[i++]),
+                loadHeight(STREAM_READER, values[i++]),
+                loadEyeColor(STREAM_READER, values[i++]),
+                loadHairColor(STREAM_READER, values[i++]),
+                loadNationality(STREAM_READER, values[i++]),
+                loadLocation(STREAM_READER, values[i])
         );
     }
 }

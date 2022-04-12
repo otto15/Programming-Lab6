@@ -140,15 +140,12 @@ public final class CommandManager {
     public static String processCommand(AbstractCommand command, String[] rawArgs) {
         if (rawArgs.length == command.getInlineArgsCount()) {
             Object[] commandArgs = command.readArgs(rawArgs);
-            if (commandArgs == null) {
-                return null;
-            }
-            if (COMMANDS_EXECUTING_WITHOUT_SENDING.containsKey(command.getName())) {
-                return executeCommand(command, commandArgs);
-            } else {
-                Response response = networkListener.listen(new Request(command, commandArgs));
-                if (response != null) {
-                    return response.getMessage();
+            if (commandArgs != null) {
+                if (COMMANDS_EXECUTING_WITHOUT_SENDING.containsKey(command.getName())) {
+                    return executeCommand(command, commandArgs);
+                } else {
+                    Response response = networkListener.listen(new Request(command, commandArgs));
+                    return response != null ? response.getMessage() : null;
                 }
             }
         } else {

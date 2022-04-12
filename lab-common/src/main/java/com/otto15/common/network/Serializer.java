@@ -10,14 +10,12 @@ import java.io.Serializable;
 
 public final class Serializer {
 
-    private static final int BUFFER_SIZE = 4096;
-
     private Serializer() {
 
     }
 
     public static byte[] serialize(Serializable objectToSerialize) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(BUFFER_SIZE);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         ObjectOutput objectOutput = new ObjectOutputStream(byteArrayOutputStream);
         objectOutput.writeObject(objectToSerialize);
 

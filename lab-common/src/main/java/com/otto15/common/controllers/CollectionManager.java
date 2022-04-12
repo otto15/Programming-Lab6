@@ -10,10 +10,6 @@ public interface CollectionManager {
 
     HashSet<Person> getPersons();
 
-    static void initFrom() {
-
-    }
-
     void add(Person newPerson);
     void clear();
     String show();

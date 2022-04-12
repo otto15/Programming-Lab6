@@ -20,8 +20,9 @@ public class UpdateCommand extends AbstractCommand {
         try {
             long id = Long.parseLong((String) args[0]);
             Response response = CommandManager.getNetworkListener().listen(new Request(new FindByIdCommand(), new Object[]{id}));
-            String currentValues = response.getMessage();
+            String currentValues = response != null ? response.getMessage() : "not found";
             if ("not found".equals(currentValues)) {
+                System.out.println("No person found with such id.");
                 return null;
             }
             Person updatedPerson = PersonLoader.loadPersonWithCurrentValues(DataNormalizer.normalize(currentValues));

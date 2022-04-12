@@ -29,6 +29,7 @@ public class XmlCollectionFileOperator implements CollectionFileReader<Collectio
         xStream.omitField(CollectionManagerImpl.class, "creationDate");
         xStream.omitField(Person.class, "id");
         xStream.omitField(CollectionManagerImpl.class, "groupsByHeight");
+        xStream.omitField(CollectionManagerImpl.class, "currentID");
         xStream.addImplicitCollection(CollectionManagerImpl.class, "persons");
         String xml = FileStreamToStringConverter.fileStreamToString(file);
         return (CollectionManagerImpl) xStream.fromXML(xml);
@@ -42,6 +43,7 @@ public class XmlCollectionFileOperator implements CollectionFileReader<Collectio
         xStream.addImplicitCollection(CollectionManagerImpl.class, "persons");
         xStream.omitField(CollectionManagerImpl.class, "creationDate");
         xStream.omitField(Person.class, "id");
+        xStream.omitField(CollectionManagerImpl.class, "currentID");
         xStream.omitField(CollectionManagerImpl.class, "groupsByHeight");
         String xml = xStream.toXML(persons);
         PrintWriter printWriter = new PrintWriter(file);

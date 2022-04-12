@@ -2,11 +2,14 @@ package com.otto15.server.collection;
 
 import com.otto15.common.controllers.CollectionManager;
 import com.otto15.common.entities.Coordinates;
+import com.otto15.common.entities.Location;
 import com.otto15.common.entities.Person;
+import com.otto15.common.entities.enums.Country;
 import com.otto15.common.entities.validators.EntityValidator;
 import com.otto15.common.io.CollectionFileReader;
 import com.otto15.server.config.IOConfig;
 import com.thoughtworks.xstream.converters.ConversionException;
+import com.thoughtworks.xstream.io.StreamException;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,7 +59,7 @@ public class CollectionManagerImpl implements CollectionManager {
      * @return
      * @throws IOException
      */
-    public static CollectionManagerImpl initFromFile(CollectionFileReader<CollectionManagerImpl> collectionFileReader, File file) throws IOException {
+    public static CollectionManagerImpl initFromFile(CollectionFileReader<CollectionManagerImpl> collectionFileReader, File file) {
         try {
             CollectionManagerImpl collectionManager = collectionFileReader.read(file);
             collectionManager.currentID = 1L;
@@ -67,10 +70,16 @@ public class CollectionManagerImpl implements CollectionManager {
             collectionManager.setup();
             return collectionManager;
         } catch (ConversionException e) {
-            throw new IOException("Objects in file are invalid.");
+            System.out.println("Objects in file are invalid.");
         } catch (IllegalArgumentException e) {
-            throw new IOException(e.getMessage());
+            System.out.println((e.getMessage()));
+        } catch (IOException e) {
+            System.out.println("Input/Output problems.");
+        } catch (StreamException e) {
+            System.out.println("Invalid file.");
         }
+        System.out.println("You will work with empty collection via problems with file.");
+        return new CollectionManagerImpl();
     }
 
     @Override
@@ -86,6 +95,10 @@ public class CollectionManagerImpl implements CollectionManager {
 
     @Override
     public String show() {
+//        for (int i = 0; i < 10000; ++i) {
+//            add(new Person("dsgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+//                    new Coordinates(1, 2d), 1, null, null, Country.CHINA, new Location(1, 1, 1)));
+//        }
         if (!persons.isEmpty()) {
             return persons.stream()
                     .sorted((person1, person2) -> person1.getName().compareToIgnoreCase(person2.getName()))
@@ -98,7 +111,7 @@ public class CollectionManagerImpl implements CollectionManager {
 
     @Override
     public Person findById(Long id) {
-        Person foundPerson = persons.stream().filter(person -> Objects.equals(person.getId(), id)).findFirst().orElse(new Person("", null, 100, null, null, null, null));
+        Person foundPerson = persons.stream().filter(person -> Objects.equals(person.getId(), id)).findFirst().orElse(new Person("", null, 1, null, null, null, null));
         if (foundPerson.getId() == null) {
             foundPerson.setId(-1L);
         }
@@ -107,7 +120,7 @@ public class CollectionManagerImpl implements CollectionManager {
 
     @Override
     public Person findAnyByHeight(long height) {
-        Person foundPerson = persons.stream().filter(person -> Objects.equals(person.getHeight(), height)).findFirst().orElse(new Person("", null, 100, null, null, null, null));
+        Person foundPerson = persons.stream().filter(person -> Objects.equals(person.getHeight(), height)).findFirst().orElse(new Person("", null, 1, null, null, null, null));
         if (foundPerson.getId() == null) {
             foundPerson.setId(-1L);
         }

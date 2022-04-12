@@ -9,49 +9,83 @@ import com.otto15.common.state.State;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.InputMismatchException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Scanner;
 
 
 public final class ConnectionHandler implements Runnable {
 
-    private static final int PORT = 2645;
-    private static final int BUFFER_SIZE = 4096;
-    private final Selector selector;
-    private final ServerSocketChannel serverChannel;
+    private static final int PORT = 29876;
+    private static final int SELECT_DELAY = 1000;
     private final Map<SocketChannel, ByteBuffer> channels = new HashMap<>();
 
+    private final Selector selector;
+    private final ServerSocketChannel serverChannel;
 
     public ConnectionHandler() throws IOException {
         selector = Selector.open();
         serverChannel = ServerSocketChannel.open();
-        serverChannel.socket().bind(new InetSocketAddress(PORT));
-        serverChannel.configureBlocking(false);
-        serverChannel.register(selector, SelectionKey.OP_ACCEPT);
-        System.out.println("Server launched!");
+        while (true) {
+            try {
+                serverChannel.socket().bind(new InetSocketAddress(inputPort()));
+                break;
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            } catch (IllegalArgumentException e) {
+                System.out.println("Port must be in the range from 1 to 65535");
+            }
+        }
+    }
+
+    private int inputPort() {
+        while (true) {
+            try {
+                System.out.println("Enter port:");
+                Scanner sc = new Scanner(System.in);
+                return sc.nextInt();
+            } catch (InputMismatchException e) {
+                System.out.println("Enter number");
+            }
+        }
     }
 
     public void run() {
         try {
+            serverChannel.configureBlocking(false);
+            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
             listen();
         } catch (IOException e) {
             System.out.println(e.getMessage());
+            close();
         }
+    }
 
+    private void close() {
+        try {
+            selector.close();
+            serverChannel.close();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     public void listen() throws IOException {
         while (State.getPerformanceStatus()) {
             SelectionKey key = null;
             try {
-                int numberOfKeys = selector.selectNow();
+                int numberOfKeys = selector.select(SELECT_DELAY);
                 if (numberOfKeys != 0) {
                     Iterator<SelectionKey> keys = selector.selectedKeys().iterator();
                     while (keys.hasNext()) {
@@ -69,61 +103,84 @@ public final class ConnectionHandler implements Runnable {
                     }
                 }
             } catch (IOException e) {
-                assert key != null;
-                kill((SocketChannel) key.channel());
+                if (key != null) {
+                    kill((SocketChannel) key.channel());
+                }
             }
         }
     }
 
-    private void accept(SelectionKey key) throws IOException {
+    private SocketAddress accept(SelectionKey key) throws IOException {
         SocketChannel channel = serverChannel.accept();
-        System.out.println("New connection accepted " + channel.getRemoteAddress());
+        SocketAddress address = channel.getRemoteAddress();
         channel.configureBlocking(false);
-        channels.put(channel, ByteBuffer.allocate(BUFFER_SIZE));
         channel.register(selector, SelectionKey.OP_READ);
+        channels.put(channel, ByteBuffer.allocate(0));
+        return address;
     }
 
-    private void read(SelectionKey key) throws IOException {
+    private Request read(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
-        ByteBuffer buffer = channels.get(channel);
-
+        ByteBuffer buffer = ByteBuffer.allocate(1024);
         int bytesRead = channel.read(buffer);
+        System.out.println(bytesRead);
         if (bytesRead == -1) {
             kill(channel);
-            return;
+            return null;
+        }
+        //((Buffer) buffer).flip();
+        ByteBuffer newBuffer = ByteBuffer.allocate(channels.get(channel).capacity() + bytesRead);
+        newBuffer.put(channels.get(channel).array());
+        System.out.println(Arrays.toString(newBuffer.array()));
+        newBuffer.put(ByteBuffer.wrap(buffer.array(), 0, bytesRead));
+        System.out.println(Arrays.toString(newBuffer.array()));
+        channels.put(channel, newBuffer);
+        Request request = null;
+
+        try {
+            request = (Request) Serializer.deserialize(channels.get(channel).array());
+            System.out.println(request);
+        } catch (IOException e) {
+            System.out.println("continue to read");
         }
 
-        Request request = (Request) Serializer.deserialize(buffer.array());
-        System.out.println("got: " + request);
-        buffer.clear();
-        assert request != null;
-        buffer.put(ByteBuffer.wrap(
-                CommandManager.executeCommand(request.getCommand(), request.getArgs()).getBytes(StandardCharsets.UTF_8)
-        ));
-        buffer.flip();
+        //buffer.clear();
+        if (request != null) {
+//            buffer.put(ByteBuffer.wrap(
+//                    CommandManager.executeCommand(request.getCommand(), request.getArgs()).getBytes(StandardCharsets.UTF_8)
+//            ));
 
-        channel.register(selector, SelectionKey.OP_WRITE);
+            channels.put(channel, ByteBuffer.wrap(CommandManager.executeCommand(request.getCommand(), request.getArgs()).getBytes(StandardCharsets.UTF_8)));
+
+//            buffer.flip();
+            channel.register(selector, SelectionKey.OP_WRITE);
+        }
+        return request;
     }
 
-    private void write(SelectionKey key) throws IOException {
+    private Response write(SelectionKey key) throws IOException {
         SocketChannel channel = (SocketChannel) key.channel();
         ByteBuffer buffer = channels.get(channel);
-        String clientMessage = new String(buffer.array(), buffer.position(), buffer.limit());
+        String clientMessage = new String(buffer.array());
         Response response = new Response(clientMessage);
-
-        buffer.clear();
-        buffer.put(ByteBuffer.wrap(Serializer.serialize(response)));
-        buffer.flip();
+        ((Buffer) buffer).clear();
+        buffer = ByteBuffer.wrap(Serializer.serialize(response));
         int bytesWritten = channel.write(buffer);
-        if (!buffer.hasRemaining()) {
-            buffer.compact();
-            channel.register(selector, SelectionKey.OP_READ);
+        System.out.println("sent " + bytesWritten);
+        while (buffer.hasRemaining()) {
+            bytesWritten = channel.write(buffer);
+            System.out.println("sent " + bytesWritten);
         }
+        //System.out.println(response);
+        channels.put(channel, ByteBuffer.allocate(0));
+        channel.register(selector, SelectionKey.OP_READ);
+        return response;
     }
 
-    private void kill(SocketChannel channel) throws IOException {
-        System.out.println("Connection closed " + channel.getRemoteAddress());
+    private SocketAddress kill(SocketChannel channel) throws IOException {
+        SocketAddress address = channel.getRemoteAddress();
         channels.remove(channel);
         channel.close();
+        return address;
     }
 }
