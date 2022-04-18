@@ -37,9 +37,9 @@ public class UpdateCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         Person updatedPerson = (Person) args[0];
         CommandManager.getCollectionManager().update(updatedPerson);
-        return "Person successfully updated!";
+        return new Response("Person successfully updated!");
     }
 }

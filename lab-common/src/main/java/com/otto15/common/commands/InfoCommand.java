@@ -1,6 +1,7 @@
 package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
 
 public class InfoCommand extends AbstractCommand {
 
@@ -14,7 +15,7 @@ public class InfoCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
-        return "Collection info:" + "\n" + CommandManager.getCollectionManager().getInfo();
+    public Response execute(Object[] args) {
+        return new Response("Collection info:" + "\n" + CommandManager.getCollectionManager().getInfo());
     }
 }

@@ -1,6 +1,7 @@
 package com.otto15.common.controllers;
 
 
+import com.otto15.common.network.Response;
 import com.otto15.common.state.State;
 
 import java.io.BufferedReader;
@@ -46,9 +47,9 @@ public class CommandListener implements Runnable {
                     break;
                 }
                 if (!"".equals(input)) {
-                    String result = CommandManager.onCommandReceived(input);
-                    if (result != null) {
-                        System.out.println(result);
+                    Response response = CommandManager.onCommandReceived(input);
+                    if (response != null) {
+                        response.showResult();
                     }
                 }
             }

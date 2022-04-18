@@ -27,7 +27,7 @@ public final class Serializer {
         ObjectInputStream objectInput = new ObjectInputStream(byteArrayInputStream);
         try {
             return (Serializable) objectInput.readObject();
-        } catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException | IOException e) {
             return null;
         }
     }

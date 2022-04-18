@@ -1,6 +1,7 @@
 package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandListener;
+import com.otto15.common.network.Response;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -24,20 +25,20 @@ public class ExecuteScriptCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         String fileName = (String) args[0];
         if (FILE_HISTORY.contains(fileName)) {
-            return "There is a problem: script will loop.";
+            return new Response("There is a problem: script will loop.");
         } else {
             try {
                 CommandListener listenerFromFile = new CommandListener(new FileReader(fileName));
                 FILE_HISTORY.add(fileName);
                 listenerFromFile.run();
             } catch (IOException e) {
-                return e.getMessage();
+                return new Response(e.getMessage());
             }
             FILE_HISTORY.remove(fileName);
         }
-        return "Exiting from " + fileName;
+        return new Response("Exiting from " + fileName);
     }
 }

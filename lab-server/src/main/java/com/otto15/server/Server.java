@@ -21,10 +21,9 @@ public final class Server {
             CommandManager.setCollectionManager(collectionManager);
             try {
                 ConnectionHandler connectionHandler = new ConnectionHandler();
-                Thread connectionHandlerThread = new Thread(connectionHandler);
-                connectionHandlerThread.start();
                 Thread commandListenerThread = new Thread(new CommandListener());
                 commandListenerThread.start();
+                connectionHandler.run();
             } catch (IOException e) {
                 System.out.println(e.getMessage());
             }

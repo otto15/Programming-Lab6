@@ -3,6 +3,7 @@ package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandListener;
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
 import com.otto15.common.state.State;
 
 import java.io.IOException;
@@ -22,17 +23,17 @@ public class ExitCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         State.switchPerformanceStatus();
         if (!CommandListener.isOnClient()) {
             try {
                 System.out.println("Saving...");
                 CommandManager.getCollectionManager().write();
             } catch (IOException e) {
-                return e.getMessage();
+                return new Response(e.getMessage());
             }
         }
-        return "Shut down.";
+        return new Response("Shut down.");
     }
 
 }

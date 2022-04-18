@@ -2,6 +2,7 @@ package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandManager;
 import com.otto15.common.entities.Person;
+import com.otto15.common.network.Response;
 
 public class RemoveAnyByHeightCommand extends AbstractCommand {
 
@@ -21,12 +22,12 @@ public class RemoveAnyByHeightCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         Person deletedPerson = CommandManager.getCollectionManager().removeAnyByHeight((Long) args[0]);
         if (deletedPerson.getId() == -1) {
-            return "No person found with such height.";
+            return new Response("No person found with such height.");
         }
-        return "Person[" + deletedPerson.getId() + "] " + deletedPerson.getName() + " was removed.";
+        return new Response("Person[" + deletedPerson.getId() + "] " + deletedPerson.getName() + " was removed.");
 
     }
 }

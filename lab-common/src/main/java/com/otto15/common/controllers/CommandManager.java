@@ -121,7 +121,7 @@ public final class CommandManager {
      *
      * @param inputData data from listener
      */
-    public static String onCommandReceived(String inputData) {
+    public static Response onCommandReceived(String inputData) {
         boolean fromClient = CommandListener.isOnClient();
         Map<String, AbstractCommand> commands = SERVER_COMMANDS;
         if (fromClient) {
@@ -134,27 +134,26 @@ public final class CommandManager {
             AbstractCommand command = commands.get(commandName);
             return processCommand(command, rawArgs);
         }
-        return "No such command, call \"help\" to see the list of commands.";
+        return new Response("No such command, call \"help\" to see the list of commands.");
     }
 
-    public static String processCommand(AbstractCommand command, String[] rawArgs) {
+    public static Response processCommand(AbstractCommand command, String[] rawArgs) {
         if (rawArgs.length == command.getInlineArgsCount()) {
             Object[] commandArgs = command.readArgs(rawArgs);
             if (commandArgs != null) {
                 if (COMMANDS_EXECUTING_WITHOUT_SENDING.containsKey(command.getName())) {
                     return executeCommand(command, commandArgs);
                 } else {
-                    Response response = networkListener.listen(new Request(command, commandArgs));
-                    return response != null ? response.getMessage() : null;
+                    return networkListener.listen(new Request(command, commandArgs));
                 }
             }
         } else {
-            return "Wrong number of arguments.";
+            return new Response("Wrong number of arguments.");
         }
         return null;
     }
 
-    public static String executeCommand(AbstractCommand command, Object[] args) {
+    public static Response executeCommand(AbstractCommand command, Object[] args) {
         CommandManager.addCommandToHistory(command.getName());
         return command.execute(args);
     }

@@ -53,22 +53,20 @@ public final class ConnectionHandler {
             isOpen = true;
             lastAddress = String.valueOf(socket.getRemoteSocketAddress());
             lastPort = socket.getPort();
-        } catch (IOException e) {
+            System.out.println("Connected.");
+        } catch (IOException | IllegalArgumentException e) {
+            isOpen = false;
             System.out.println("Invalid host or port");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Port must be in the range from 1 to 65535");
         }
     }
 
     private int inputPort() {
-        while (true) {
-            try {
-                System.out.println("Enter port:");
-                Scanner sc = new Scanner(System.in);
-                return sc.nextInt();
-            } catch (InputMismatchException e) {
-                System.out.println("Enter the number.");
-            }
+        try {
+            System.out.println("Enter port:");
+            Scanner sc = new Scanner(System.in);
+            return sc.nextInt();
+        } catch (InputMismatchException e) {
+            return 0;
         }
     }
 

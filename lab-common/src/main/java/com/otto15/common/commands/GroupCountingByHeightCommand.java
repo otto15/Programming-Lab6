@@ -1,6 +1,7 @@
 package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
 
 /**
  * Command for grouping by height
@@ -17,8 +18,8 @@ public class GroupCountingByHeightCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         CommandManager.getCollectionManager().makeGroupsByHeight();
-        return CommandManager.getCollectionManager().outputGroupsByHeight();
+        return new Response(CommandManager.getCollectionManager().outputGroupsByHeight());
     }
 }

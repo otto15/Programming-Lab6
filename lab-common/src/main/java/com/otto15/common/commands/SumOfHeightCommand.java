@@ -2,6 +2,7 @@ package com.otto15.common.commands;
 
 
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
 
 public class SumOfHeightCommand extends AbstractCommand {
 
@@ -15,8 +16,8 @@ public class SumOfHeightCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         System.out.println();
-        return String.valueOf(CommandManager.getCollectionManager().getSumOfHeights());
+        return new Response(String.valueOf(CommandManager.getCollectionManager().getSumOfHeights()));
     }
 }

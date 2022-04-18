@@ -1,5 +1,7 @@
 package com.otto15.common.commands;
 
+import com.otto15.common.network.Response;
+
 import java.io.Serializable;
 
 
@@ -23,7 +25,7 @@ public abstract class AbstractCommand implements Serializable {
      * @param args
      * @return true - if execution completed successfully, false - if not
      */
-    public abstract String execute(Object[] args);
+    public abstract Response execute(Object[] args);
 
     public abstract Object[] readArgs(Object[] args);
 

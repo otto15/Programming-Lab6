@@ -3,6 +3,7 @@ package com.otto15.common.commands;
 import com.otto15.common.controllers.CommandManager;
 import com.otto15.common.entities.Person;
 import com.otto15.common.entities.PersonLoader;
+import com.otto15.common.network.Response;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,14 +30,14 @@ public class AddIfMinCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
 
         Person newPerson = (Person) args[0];
         if (newPerson.compareTo(Collections.min(CommandManager.getCollectionManager().getPersons())) < 0) {
             CommandManager.getCollectionManager().add(newPerson);
-            return "New person successfully created!";
+            return new Response("New person successfully created!");
         } else {
-            return "Given person is not minimal.";
+            return new Response("Given person is not minimal.");
         }
 
     }

@@ -1,10 +1,7 @@
 package com.otto15.server.collection;
 
 import com.otto15.common.controllers.CollectionManager;
-import com.otto15.common.entities.Coordinates;
-import com.otto15.common.entities.Location;
 import com.otto15.common.entities.Person;
-import com.otto15.common.entities.enums.Country;
 import com.otto15.common.entities.validators.EntityValidator;
 import com.otto15.common.io.CollectionFileReader;
 import com.otto15.server.config.IOConfig;
@@ -16,8 +13,7 @@ import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +27,11 @@ import java.util.stream.Collectors;
  */
 public class CollectionManagerImpl implements CollectionManager {
     private Long currentID = 1L; //Поле не может быть null, Значение поля должно быть больше 0, Значение этого поля должно быть уникальным, Значение этого поля должно генерироваться автоматически
-    private HashSet<Person> persons;
+    private HashSet<Person> persons = new HashSet<>();
     private ZonedDateTime creationDate = ZonedDateTime.now();
     private Map<Long, List<Person>> groupsByHeight;
 
     public CollectionManagerImpl() {
-        persons = new HashSet<>();
     }
 
     public HashSet<Person> getPersons() {
@@ -94,19 +89,11 @@ public class CollectionManagerImpl implements CollectionManager {
     }
 
     @Override
-    public String show() {
-//        for (int i = 0; i < 10000; ++i) {
-//            add(new Person("dsgggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
-//                    new Coordinates(1, 2d), 1, null, null, Country.CHINA, new Location(1, 1, 1)));
-//        }
-        if (!persons.isEmpty()) {
-            return persons.stream()
-                    .sorted((person1, person2) -> person1.getName().compareToIgnoreCase(person2.getName()))
-                    .map(Person::toString)
-                    .collect(Collectors.joining("\n"));
-        } else {
-            return "Collection is empty.";
-        }
+    public Collection<Person> show() {
+        return persons.stream()
+                .sorted((person1, person2) -> person1.getName().compareToIgnoreCase(person2.getName()))
+                .collect(Collectors.toList());
+
     }
 
     @Override
@@ -156,14 +143,7 @@ public class CollectionManagerImpl implements CollectionManager {
 
     @Override
     public void makeGroupsByHeight() {
-        groupsByHeight = new HashMap<>();
-        for (Person person : persons) {
-            if (groupsByHeight.containsKey(person.getHeight())) {
-                groupsByHeight.get(person.getHeight()).add(person);
-            } else {
-                groupsByHeight.put(person.getHeight(), new ArrayList<>(Arrays.asList(person)));
-            }
-        }
+        groupsByHeight = persons.stream().collect(Collectors.groupingBy(Person::getHeight));
     }
 
     @Override
@@ -213,3 +193,5 @@ public class CollectionManagerImpl implements CollectionManager {
         }
     }
 }
+
+

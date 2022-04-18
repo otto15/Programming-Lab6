@@ -1,6 +1,8 @@
 package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
+
 import java.util.stream.Collectors;
 
 /**
@@ -18,11 +20,11 @@ public class HelpCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
-        return CommandManager.getCommands()
+    public Response execute(Object[] args) {
+        return new Response(CommandManager.getCommands()
                 .values()
                 .stream()
                 .map(value -> value.getName() + " - " + value.getDescription() + ", implies " + value.getInlineArgsCount() + " argument(s)")
-                .collect(Collectors.joining("\n"));
+                .collect(Collectors.joining("\n")));
     }
 }

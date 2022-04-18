@@ -3,6 +3,7 @@ package com.otto15.common.controllers;
 import com.otto15.common.entities.Person;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -12,7 +13,7 @@ public interface CollectionManager {
 
     void add(Person newPerson);
     void clear();
-    String show();
+    Collection<Person> show();
     Person findById(Long id);
     long getSumOfHeights();
     List<String> getInfo();

@@ -25,6 +25,9 @@ public final class PersonValidator {
         if (args.length > 1) {
             throw new IllegalArgumentException("Provide one argument, use \"\" for several words.");
         }
+        if (args[0].length() > (Integer.MAX_VALUE / 2)) {
+            throw new IllegalArgumentException("String is too long.");
+        }
         return args[0];
     }
 

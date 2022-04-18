@@ -1,6 +1,7 @@
 package com.otto15.common.commands;
 
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
 
 import java.util.Queue;
 import java.util.stream.Collectors;
@@ -17,14 +18,14 @@ public class HistoryCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         if (CommandManager.getCommandHistory().size() == 0) {
-            return "History is empty.";
+            return new Response("History is empty.");
         } else {
             Queue<String> history = CommandManager.getCommandHistory();
-            return history.stream().
+            return new Response(history.stream().
                     limit(history.size() - 1).
-                    collect(Collectors.joining("\n"));
+                    collect(Collectors.joining("\n")));
         }
     }
 }

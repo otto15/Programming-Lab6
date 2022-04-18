@@ -2,6 +2,7 @@ package com.otto15.common.commands;
 
 
 import com.otto15.common.controllers.CommandManager;
+import com.otto15.common.network.Response;
 
 public class RemoveByIdCommand extends AbstractCommand {
 
@@ -20,11 +21,11 @@ public class RemoveByIdCommand extends AbstractCommand {
     }
 
     @Override
-    public String execute(Object[] args) {
+    public Response execute(Object[] args) {
         boolean result = CommandManager.getCollectionManager().removeById((Long) args[0]);
         if (result) {
-            return "Removed successfully!";
+            return new Response("Removed successfully!");
         }
-        return "Person with such id was not found.";
+        return new Response("Person with such id was not found.");
     }
 }
